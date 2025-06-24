@@ -1,0 +1,11 @@
+{
+  "functions": {
+    "app/api/multi-agent/route.ts": {
+      "maxDuration": 60
+    }
+  },
+  "env": {
+    "OPENAI_API_KEY": "@openai-api-key",
+    "DEEPSEEK_API_KEY": "@deepseek-api-key"
+  }
+}
