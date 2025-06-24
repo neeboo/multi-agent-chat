@@ -1,0 +1,24 @@
+{
+  "version": "0.2",
+  "language": "en",
+  "words": [
+    "v0",
+    "DeepSeek",
+    "Nextjs",
+    "Tailwindcss",
+    "multiagent",
+    "openai",
+    "deepseek",
+    "vercel",
+    "shadcn",
+    "lucide",
+    "radix",
+    "clsx",
+    "tailwindcss",
+    "typescript",
+    "eslint",
+    "cspell"
+  ],
+  "ignorePaths": ["node_modules/**", ".next/**", "dist/**", "*.json", ".git/**"],
+  "ignoreWords": ["OPENAI", "DEEPSEEK", "API", "URL", "ENV"]
+}
