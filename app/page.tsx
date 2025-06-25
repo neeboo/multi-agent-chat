@@ -1,7 +1,6 @@
 "use client"
 
 import React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -36,6 +35,7 @@ export default function Home() {
   const [currentTask, setCurrentTask] = useState<TaskContext | null>(null)
   const [taskHistory, setTaskHistory] = useState<TaskContext[]>([])
   const [apiStatus, setApiStatus] = useState<"checking" | "configured" | "missing">("checking")
+  const [lastError, setLastError] = useState<string | null>(null)
 
   // 检查 API 配置状态
   const checkApiStatus = async () => {
@@ -61,27 +61,37 @@ export default function Home() {
 
     setIsLoading(true)
     setCurrentTask(null)
+    setLastError(null)
 
     try {
+      console.log("Sending request to /api/multi-agent...")
+
       const response = await fetch("/api/multi-agent", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({ message: input }),
       })
 
+      console.log("Response status:", response.status)
+
       const result = await response.json()
+      console.log("Response data:", result)
 
       if (result.success) {
         setCurrentTask(result.data)
         setTaskHistory((prev) => [result.data, ...prev])
-        setApiStatus("configured") // API 调用成功，说明已配置
+        setApiStatus("configured")
       } else {
-        console.error("API Error:", result.error)
-        alert(`错误: ${result.error}`)
+        const errorMsg = result.error || "未知错误"
+        setLastError(errorMsg)
+        console.error("API Error:", result)
       }
     } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : "网络请求失败"
+      setLastError(errorMsg)
       console.error("Request failed:", error)
-      alert("请求失败，请检查网络连接或 API 配置")
     } finally {
       setIsLoading(false)
       setInput("")
@@ -136,6 +146,16 @@ export default function Home() {
             </Button>
           </form>
 
+          {/* 错误提示 */}
+          {lastError && (
+            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-sm text-red-800">
+                ❌ <strong>错误：</strong>
+                {lastError}
+              </p>
+            </div>
+          )}
+
           {apiStatus === "missing" && (
             <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
               <p className="text-sm text-yellow-800">
@@ -144,7 +164,7 @@ export default function Home() {
             </div>
           )}
 
-          {apiStatus === "configured" && (
+          {apiStatus === "configured" && !lastError && (
             <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
               <p className="text-sm text-green-800">
                 🎉 <strong>就绪：</strong>AI 团队已准备好为你服务！
@@ -214,7 +234,7 @@ export default function Home() {
         </Card>
       )}
 
-      {taskHistory.length === 0 && !currentTask && apiStatus === "configured" && (
+      {taskHistory.length === 0 && !currentTask && apiStatus === "configured" && !lastError && (
         <Card>
           <CardContent className="text-center py-12">
             <div className="text-gray-500">
