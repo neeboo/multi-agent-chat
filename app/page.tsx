@@ -1,6 +1,7 @@
 "use client"
 
-import type React from "react"
+import React from "react"
+
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -34,6 +35,25 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false)
   const [currentTask, setCurrentTask] = useState<TaskContext | null>(null)
   const [taskHistory, setTaskHistory] = useState<TaskContext[]>([])
+  const [apiStatus, setApiStatus] = useState<"checking" | "configured" | "missing">("checking")
+
+  // 检查 API 配置状态
+  const checkApiStatus = async () => {
+    try {
+      const response = await fetch("/api/health")
+      if (response.ok) {
+        setApiStatus("configured")
+      } else {
+        setApiStatus("missing")
+      }
+    } catch {
+      setApiStatus("missing")
+    }
+  }
+
+  React.useEffect(() => {
+    checkApiStatus()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -54,14 +74,14 @@ export default function Home() {
       if (result.success) {
         setCurrentTask(result.data)
         setTaskHistory((prev) => [result.data, ...prev])
+        setApiStatus("configured") // API 调用成功，说明已配置
       } else {
         console.error("API Error:", result.error)
-        // 显示错误信息
         alert(`错误: ${result.error}`)
       }
     } catch (error) {
       console.error("Request failed:", error)
-      alert("请求失败，请检查网络连接")
+      alert("请求失败，请检查网络连接或 API 配置")
     } finally {
       setIsLoading(false)
       setInput("")
@@ -99,6 +119,7 @@ export default function Home() {
           <CardTitle className="flex items-center gap-2">
             🤖 Multi-Agent Development System
             {isLoading && <Loader2 className="h-5 w-5 animate-spin" />}
+            {apiStatus === "configured" && <Badge className="bg-green-100 text-green-800">✅ API 已配置</Badge>}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -106,7 +127,7 @@ export default function Home() {
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="描述你的开发需求..."
+              placeholder="描述你的开发需求，例如：创建一个用户登录页面"
               disabled={isLoading}
               className="flex-1"
             />
@@ -115,10 +136,18 @@ export default function Home() {
             </Button>
           </form>
 
-          {!process.env.NEXT_PUBLIC_API_CONFIGURED && (
+          {apiStatus === "missing" && (
             <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
               <p className="text-sm text-yellow-800">
                 💡 <strong>提示：</strong>需要配置 OpenAI 和 DeepSeek API 密钥才能使用完整功能
+              </p>
+            </div>
+          )}
+
+          {apiStatus === "configured" && (
+            <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
+              <p className="text-sm text-green-800">
+                🎉 <strong>就绪：</strong>AI 团队已准备好为你服务！
               </p>
             </div>
           )}
@@ -180,6 +209,22 @@ export default function Home() {
                   </Badge>
                 </div>
               ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {taskHistory.length === 0 && !currentTask && apiStatus === "configured" && (
+        <Card>
+          <CardContent className="text-center py-12">
+            <div className="text-gray-500">
+              <h3 className="text-lg font-medium mb-2">🚀 AI 团队准备就绪</h3>
+              <p>输入你的开发需求，AI 团队将自动协作完成任务</p>
+              <div className="mt-4 text-sm space-y-1">
+                <p>📋 项目经理：需求分析和方案制定</p>
+                <p>💻 工程师：代码实现和技术方案</p>
+                <p>🔍 QA工程师：代码审查和测试建议</p>
+              </div>
             </div>
           </CardContent>
         </Card>
