@@ -6,156 +6,184 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Loader2, Send, User, Briefcase, Code, Bug } from "lucide-react"
+
+interface AgentMessage {
+  id: string
+  role: "human" | "pm" | "engineer" | "qa"
+  content: string
+  timestamp: Date
+}
+
+interface TaskContext {
+  id: string
+  originalRequest: string
+  messages: AgentMessage[]
+  status: "processing" | "completed" | "failed"
+}
+
+const roleConfig = {
+  human: { name: "👤 Human", icon: User, color: "bg-blue-100 text-blue-800" },
+  pm: { name: "📋 Project Manager", icon: Briefcase, color: "bg-green-100 text-green-800" },
+  engineer: { name: "💻 Engineer", icon: Code, color: "bg-purple-100 text-purple-800" },
+  qa: { name: "🔍 QA Engineer", icon: Bug, color: "bg-orange-100 text-orange-800" },
+}
 
 export default function Home() {
   const [input, setInput] = useState("")
-  const [messages, setMessages] = useState<
-    Array<{
-      id: string
-      role: string
-      content: string
-      timestamp: Date
-    }>
-  >([])
-  const [loading, setLoading] = useState(false)
-
-  const simulateAgentResponse = (userInput: string) => {
-    const responses = [
-      {
-        role: "PM",
-        content: `## 📋 需求分析\n收到需求：${userInput}\n\n## 🎯 核心功能\n- 用户界面设计\n- 后端API开发\n- 数据库设计\n\n## 🛠️ 技术方案\n使用 Next.js + TypeScript + Tailwind CSS`,
-      },
-      {
-        role: "Engineer",
-        content: `## 💻 代码实现\n\n\`\`\`typescript\n// 示例代码\nfunction handleUserRequest(input: string) {\n  return {\n    success: true,\n    data: input\n  }\n}\n\`\`\`\n\n已完成基础架构搭建。`,
-      },
-      {
-        role: "QA",
-        content: `## 🔍 质量审查\n\n✅ **通过项**\n- 代码结构清晰\n- 类型定义完整\n\n⚠️ **建议**\n- 添加错误处理\n- 增加单元测试\n\n## 🧪 测试建议\n- 功能测试\n- 性能测试`,
-      },
-    ]
-
-    return responses
-  }
+  const [isLoading, setIsLoading] = useState(false)
+  const [currentTask, setCurrentTask] = useState<TaskContext | null>(null)
+  const [taskHistory, setTaskHistory] = useState<TaskContext[]>([])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!input.trim() || loading) return
+    if (!input.trim() || isLoading) return
 
-    setLoading(true)
+    setIsLoading(true)
+    setCurrentTask(null)
 
-    // 添加用户消息
-    const userMessage = {
-      id: Date.now().toString(),
-      role: "Human",
-      content: input,
-      timestamp: new Date(),
-    }
-    setMessages((prev) => [...prev, userMessage])
+    try {
+      const response = await fetch("/api/multi-agent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: input }),
+      })
 
-    // 模拟AI响应
-    const responses = simulateAgentResponse(input)
+      const result = await response.json()
 
-    for (let i = 0; i < responses.length; i++) {
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      const agentMessage = {
-        id: (Date.now() + i).toString(),
-        role: responses[i].role,
-        content: responses[i].content,
-        timestamp: new Date(),
+      if (result.success) {
+        setCurrentTask(result.data)
+        setTaskHistory((prev) => [result.data, ...prev])
+      } else {
+        console.error("API Error:", result.error)
+        // 显示错误信息
+        alert(`错误: ${result.error}`)
       }
-
-      setMessages((prev) => [...prev, agentMessage])
+    } catch (error) {
+      console.error("Request failed:", error)
+      alert("请求失败，请检查网络连接")
+    } finally {
+      setIsLoading(false)
+      setInput("")
     }
-
-    setInput("")
-    setLoading(false)
   }
 
-  const roleColors = {
-    Human: "bg-blue-100 text-blue-800",
-    PM: "bg-green-100 text-green-800",
-    Engineer: "bg-purple-100 text-purple-800",
-    QA: "bg-orange-100 text-orange-800",
+  const formatContent = (content: string) => {
+    return content.split("\n").map((line, index) => {
+      if (line.startsWith("##")) {
+        return (
+          <h3 key={index} className="font-bold text-lg mt-4 mb-2">
+            {line.replace("##", "").trim()}
+          </h3>
+        )
+      }
+      if (line.startsWith("```")) {
+        return (
+          <div key={index} className="bg-gray-100 p-2 rounded text-sm font-mono my-2">
+            {line}
+          </div>
+        )
+      }
+      return (
+        <p key={index} className="mb-2">
+          {line}
+        </p>
+      )
+    })
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">🤖 Multi-Agent Chat System</h1>
-        <p className="text-gray-600 mb-8">AI团队协作开发平台</p>
-        <div className="bg-white p-8 rounded-lg shadow-md max-w-md mx-auto">
-          <div className="text-green-600 text-6xl mb-4">✅</div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">部署成功！</h2>
-          <p className="text-gray-600">Vercel 部署已完成，系统正常运行</p>
-          <div className="mt-6 text-sm text-gray-500">
-            <p>🚀 Next.js 14 + TypeScript</p>
-            <p>🎨 Tailwind CSS + shadcn/ui</p>
-            <p>☁️ Vercel 云部署</p>
-          </div>
-        </div>
-      </div>
+    <div className="container mx-auto p-4 max-w-6xl">
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            🤖 Multi-Agent Development System
+            {isLoading && <Loader2 className="h-5 w-5 animate-spin" />}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="flex gap-2">
+            <Input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="描述你的开发需求..."
+              disabled={isLoading}
+              className="flex-1"
+            />
+            <Button type="submit" disabled={isLoading || !input.trim()}>
+              <Send className="h-4 w-4" />
+            </Button>
+          </form>
 
-      <div className="container mx-auto max-w-6xl p-4 mt-12">
+          {!process.env.NEXT_PUBLIC_API_CONFIGURED && (
+            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+              <p className="text-sm text-yellow-800">
+                💡 <strong>提示：</strong>需要配置 OpenAI 和 DeepSeek API 密钥才能使用完整功能
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {currentTask && (
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>💬 发起开发任务</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>当前任务</CardTitle>
+              <Badge variant={currentTask.status === "completed" ? "default" : "secondary"}>
+                {currentTask.status === "processing"
+                  ? "处理中"
+                  : currentTask.status === "completed"
+                    ? "已完成"
+                    : "失败"}
+              </Badge>
+            </div>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="flex gap-2">
-              <Input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="描述你的开发需求，例如：创建一个用户登录页面"
-                disabled={loading}
-                className="flex-1"
-              />
-              <Button type="submit" disabled={loading || !input.trim()}>
-                {loading ? "AI团队协作中..." : "发起任务"}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+            <div className="space-y-4">
+              {currentTask.messages.map((message) => {
+                const config = roleConfig[message.role]
+                const Icon = config.icon
 
-        {messages.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>🗣️ 团队协作过程</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4 max-h-96 overflow-y-auto">
-                {messages.map((message) => (
+                return (
                   <div key={message.id} className="border rounded-lg p-4">
                     <div className="flex items-center gap-2 mb-3">
-                      <Badge className={roleColors[message.role as keyof typeof roleColors]}>{message.role}</Badge>
-                      <span className="text-sm text-gray-500">{message.timestamp.toLocaleTimeString()}</span>
+                      <Icon className="h-5 w-5" />
+                      <Badge className={config.color}>{config.name}</Badge>
+                      <span className="text-sm text-gray-500">{new Date(message.timestamp).toLocaleTimeString()}</span>
                     </div>
-                    <div className="prose max-w-none">
-                      <pre className="whitespace-pre-wrap font-sans">{message.content}</pre>
-                    </div>
+                    <div className="prose max-w-none">{formatContent(message.content)}</div>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                )
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-        {messages.length === 0 && (
-          <Card>
-            <CardContent className="text-center py-12">
-              <div className="text-gray-500">
-                <h3 className="text-lg font-medium mb-2">准备就绪</h3>
-                <p>输入你的开发需求，AI团队将自动协作完成任务</p>
-                <div className="mt-4 text-sm">
-                  <p>🎯 这是一个演示版本，展示多Agent协作流程</p>
-                  <p>🔧 完整版本需要配置 OpenAI 和 DeepSeek API 密钥</p>
+      {taskHistory.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>历史任务</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {taskHistory.map((task) => (
+                <div
+                  key={task.id}
+                  className="flex items-center justify-between p-3 border rounded cursor-pointer hover:bg-gray-50"
+                  onClick={() => setCurrentTask(task)}
+                >
+                  <span className="truncate flex-1">{task.originalRequest}</span>
+                  <Badge variant={task.status === "completed" ? "default" : "secondary"}>
+                    {task.status === "completed" ? "已完成" : task.status}
+                  </Badge>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-    </main>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   )
 }

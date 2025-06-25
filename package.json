@@ -1,12 +1,13 @@
 {
-  "name": "multi-agent-chat-simple",
-  "version": "0.1.0",
+  "name": "multi-agent-chat-system",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "build": "next build",
     "dev": "next dev",
     "lint": "next lint",
-    "start": "next start"
+    "start": "next start",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@ai-sdk/deepseek": "latest",
