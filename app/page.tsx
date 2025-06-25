@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -82,13 +81,23 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <div className="container mx-auto max-w-6xl p-4">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">🤖 Multi-Agent Development System</h1>
-          <p className="text-gray-600">AI团队协作开发平台 - 演示版本</p>
+    <main className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">🤖 Multi-Agent Chat System</h1>
+        <p className="text-gray-600 mb-8">AI团队协作开发平台</p>
+        <div className="bg-white p-8 rounded-lg shadow-md max-w-md mx-auto">
+          <div className="text-green-600 text-6xl mb-4">✅</div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">部署成功！</h2>
+          <p className="text-gray-600">Vercel 部署已完成，系统正常运行</p>
+          <div className="mt-6 text-sm text-gray-500">
+            <p>🚀 Next.js 14 + TypeScript</p>
+            <p>🎨 Tailwind CSS + shadcn/ui</p>
+            <p>☁️ Vercel 云部署</p>
+          </div>
         </div>
+      </div>
 
+      <div className="container mx-auto max-w-6xl p-4 mt-12">
         <Card className="mb-6">
           <CardHeader>
             <CardTitle>💬 发起开发任务</CardTitle>
@@ -138,6 +147,10 @@ export default function Home() {
               <div className="text-gray-500">
                 <h3 className="text-lg font-medium mb-2">准备就绪</h3>
                 <p>输入你的开发需求，AI团队将自动协作完成任务</p>
+                <div className="mt-4 text-sm">
+                  <p>🎯 这是一个演示版本，展示多Agent协作流程</p>
+                  <p>🔧 完整版本需要配置 OpenAI 和 DeepSeek API 密钥</p>
+                </div>
               </div>
             </CardContent>
           </Card>
