@@ -1,6 +1,5 @@
 import { generateText } from "@/lib/llm"
 import { openai } from "@/lib/llm"
-import { deepseek } from "@ai-sdk/deepseek"
 
 export interface AgentMessage {
   id: string
@@ -161,12 +160,17 @@ class MultiAgentSystem {
     console.log(`🔍 QA: Engineer code length: ${engineerCode.length} chars`)
 
     try {
-      console.log(`🔍 QA: Calling DeepSeek chat model...`)
+      console.log(`🔍 QA: Calling OpenAI GPT-4o-mini (replacing DeepSeek due to timeout issues)...`)
       const startTime = Date.now()
 
       const result = await generateText({
-        model: deepseek("deepseek-chat"),
-        system: `你是QA工程师。审查代码质量并提出测试建议。`,
+        model: openai("gpt-4o-mini"),
+        system: `你是QA工程师。审查代码质量并提出测试建议。
+请按以下格式回复：
+## 🔍 代码审查
+## 🐛 潜在问题
+## ✅ 测试建议
+## 📝 改进建议`,
         prompt: `工程师实现：${engineerCode}
 
 原始需求：${originalRequest}
@@ -175,7 +179,7 @@ class MultiAgentSystem {
       })
 
       const duration = Date.now() - startTime
-      console.log(`🔍 QA: DeepSeek call completed in ${duration}ms`)
+      console.log(`🔍 QA: OpenAI call completed in ${duration}ms`)
       console.log(`🔍 QA: Response preview: "${result.text.substring(0, 100)}..."`)
 
       return result.text
